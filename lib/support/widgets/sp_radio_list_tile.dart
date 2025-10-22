@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:example_mobile_consent/support/sp_app_colors.dart';
+import 'package:flutter/material.dart';
 
 class SPRadioListTile<T> extends StatelessWidget {
   final T value;

@@ -1,13 +1,15 @@
+import 'dart:io';
+
+import 'package:example_mobile_consent/app_config.dart';
+import 'package:example_mobile_consent/support/widgets/sp_button.dart';
+import 'package:example_mobile_consent/support/widgets/sp_radio_list_tile.dart';
+import 'package:example_mobile_consent/support/widgets/sp_text_field.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:secure_privacy_mobile_consent/data/dto.dart';
 import 'package:secure_privacy_mobile_consent/data/enums/sp_consent_status.dart';
 import 'package:secure_privacy_mobile_consent/secure_privacy_mobile_consent.dart';
 import 'package:secure_privacy_mobile_consent/support/logging/sp_logger.dart';
-import 'package:example_mobile_consent/app_config.dart';
-import 'package:example_mobile_consent/support/widgets/sp_button.dart';
-import 'package:example_mobile_consent/support/widgets/sp_radio_list_tile.dart';
-import 'package:example_mobile_consent/support/widgets/sp_text_field.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -19,7 +21,7 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   static final _kTag = "_MainScreenState";
 
-    final _spMobileConsent = SecurePrivacyMobileConsent();
+  final _spMobileConsent = SecurePrivacyMobileConsent();
 
   bool _isLoading = false;
   String _error = "";
@@ -65,9 +67,13 @@ class _MainScreenState extends State<MainScreen> {
     setState(() => _isLoading = true);
 
     final result = await _spMobileConsent.initialiseSDK(
-      SPAuthKey(
-        applicationId: AppConfig.applicationId,
-        secondaryApplicationId: AppConfig.secondaryApplicationId,
+      android: SPAuthKey(
+        applicationId: AppConfig.applicationIdAndroid,
+        secondaryApplicationId: AppConfig.secondaryApplicationIdAndroid,
+      ),
+      ios: SPAuthKey(
+        applicationId: AppConfig.applicationIdIOS,
+        secondaryApplicationId: AppConfig.secondaryApplicationIdIOS,
       ),
     );
     SPLogger.d(_kTag, "onInitialiseTap()=>$result");
@@ -146,7 +152,7 @@ class _MainContentState extends State<_MainContent> {
 
   final _spMobileConsent = SecurePrivacyMobileConsent();
 
-  String _selectedAppId = AppConfig.applicationId;
+  String _selectedAppId = AppConfig.primaryAppId;
   SPConsentStatus _consentStatus = SPConsentStatus.pending;
   String _packageId = "";
   String? _packageStatusLabel;
@@ -166,11 +172,19 @@ class _MainContentState extends State<_MainContent> {
       }
     });
     _spMobileConsent.addListener(
-      AppConfig.applicationId,
+      Platform.isAndroid
+          ? AppConfig.applicationIdAndroid
+          : Platform.isIOS
+          ? AppConfig.applicationIdIOS
+          : "",
       _primaryAppConsentEventCode,
     );
     _spMobileConsent.addListener(
-      AppConfig.secondaryApplicationId,
+      Platform.isAndroid
+          ? AppConfig.secondaryApplicationIdAndroid
+          : Platform.isIOS
+          ? AppConfig.secondaryApplicationIdIOS
+          : "",
       _secondaryAppConsentEventCode,
     );
   }
@@ -184,16 +198,16 @@ class _MainContentState extends State<_MainContent> {
 
   Future<void> _renderAppInfo() async {
     final primaryAppLocale = await _spMobileConsent.getLocale(
-      AppConfig.applicationId,
+      AppConfig.primaryAppId,
     );
     final primaryAppClientId = await _spMobileConsent.getClientId(
-      AppConfig.applicationId,
+      AppConfig.primaryAppId,
     );
     final secondaryAppLocale = await _spMobileConsent.getLocale(
-      AppConfig.secondaryApplicationId,
+      AppConfig.secondaryAppId,
     );
     final secondaryAppClientId = await _spMobileConsent.getClientId(
-      AppConfig.secondaryApplicationId,
+      AppConfig.secondaryAppId,
     );
     setState(() {
       _primarySubtitle =
@@ -204,104 +218,102 @@ class _MainContentState extends State<_MainContent> {
   }
 
   @override
-  Widget build(BuildContext context) => SingleChildScrollView(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.max,
-      children: [
-        Container(
-          padding: EdgeInsets.only(
-            top: kToolbarHeight * 1.25,
-            bottom: kToolbarHeight,
-          ),
-          alignment: Alignment.center,
-          child: RichText(
-            text: TextSpan(
-              style: DefaultTextStyle.of(context).style.copyWith(fontSize: 16),
-              children: [
-                const TextSpan(
-                  text: 'SDK Status: ',
-                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 22),
-                ),
-                TextSpan(
-                  text: "Initialised",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w300,
-                    fontSize: 20,
-                  ),
-                ),
-              ],
-            ),
-          ),
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.max,
+    children: [
+      Container(
+        padding: EdgeInsets.only(
+          top: kToolbarHeight * 1.25,
+          bottom: kToolbarHeight,
         ),
-        Text(
-          'Application Type',
-          style: TextStyle(fontWeight: FontWeight.w500, fontSize: 18),
-        ),
-        const SizedBox(height: 8),
-        SPRadioListTile(
-          value: AppConfig.applicationId,
-          groupValue: _selectedAppId,
-          onChange: (appId) {
-            setState(() => _selectedAppId = appId);
-            _onCheckConsentStatus();
-          },
-          title: "Primary",
-          subTitle: _primarySubtitle,
-        ),
-        SPRadioListTile(
-          value: AppConfig.secondaryApplicationId,
-          groupValue: _selectedAppId,
-          onChange: (appId) {
-            setState(() => _selectedAppId = appId);
-            _onCheckConsentStatus();
-          },
-          title: "Secondary",
-          subTitle: _secondarySubtitle,
-        ),
-        Container(
-          padding: EdgeInsets.only(top: 24, bottom: 2),
-          alignment: Alignment.centerLeft,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+        alignment: Alignment.center,
+        child: RichText(
+          text: TextSpan(
+            style: DefaultTextStyle.of(context).style.copyWith(fontSize: 16),
             children: [
-              Expanded(
-                child: RichText(
-                  text: TextSpan(
-                    style: DefaultTextStyle.of(
-                      context,
-                    ).style.copyWith(fontSize: 15),
-                    children: [
-                      const TextSpan(
-                        text: 'Consent Status: ',
-                        style: TextStyle(fontWeight: FontWeight.w400),
-                      ),
-                      TextSpan(
-                        text: _consentStatus.rawValue,
-                        style: const TextStyle(fontWeight: FontWeight.w300),
-                      ),
-                    ],
-                  ),
-                ),
+              const TextSpan(
+                text: 'SDK Status: ',
+                style: TextStyle(fontWeight: FontWeight.w500, fontSize: 22),
               ),
-              IconButton(
-                onPressed: _onCheckConsentStatus,
-                icon: Icon(Icons.refresh),
+              TextSpan(
+                text: "Initialised",
+                style: const TextStyle(
+                  fontWeight: FontWeight.w300,
+                  fontSize: 20,
+                ),
               ),
             ],
           ),
         ),
-        SPButton(label: "Consent Banner", onTap: _onConsentBannerTap),
-        SPButton(label: "Preference Center", onTap: _onPreferenceCenterTap),
-        SPTextField(
-          label: _packageStatusLabel ?? "Please enter a package name",
-          hint: "com.google.ads.mediation:facebook",
-          onChange: (packageName) => _packageId = packageName,
+      ),
+      Text(
+        'Application Type',
+        style: TextStyle(fontWeight: FontWeight.w500, fontSize: 18),
+      ),
+      const SizedBox(height: 8),
+      SPRadioListTile(
+        value: AppConfig.primaryAppId,
+        groupValue: _selectedAppId,
+        onChange: (appId) {
+          setState(() => _selectedAppId = appId);
+          _onCheckConsentStatus();
+        },
+        title: "Primary",
+        subTitle: _primarySubtitle,
+      ),
+      SPRadioListTile(
+        value: AppConfig.secondaryAppId,
+        groupValue: _selectedAppId,
+        onChange: (appId) {
+          setState(() => _selectedAppId = appId);
+          _onCheckConsentStatus();
+        },
+        title: "Secondary",
+        subTitle: _secondarySubtitle,
+      ),
+      Container(
+        padding: EdgeInsets.only(top: 24, bottom: 2),
+        alignment: Alignment.centerLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: RichText(
+                text: TextSpan(
+                  style: DefaultTextStyle.of(
+                    context,
+                  ).style.copyWith(fontSize: 15),
+                  children: [
+                    const TextSpan(
+                      text: 'Consent Status: ',
+                      style: TextStyle(fontWeight: FontWeight.w400),
+                    ),
+                    TextSpan(
+                      text: _consentStatus.rawValue,
+                      style: const TextStyle(fontWeight: FontWeight.w300),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            IconButton(
+              onPressed: _onCheckConsentStatus,
+              icon: Icon(Icons.refresh),
+            ),
+          ],
         ),
-        SPButton(label: "Check package status", onTap: _onCheckPackageStatus),
-        SPButton(label: "Clear session", onTap: _onClearSessionTap),
-      ],
-    ),
+      ),
+      SPButton(label: "Consent Banner", onTap: _onConsentBannerTap),
+      SPButton(label: "Preference Center", onTap: _onPreferenceCenterTap),
+      SPTextField(
+        label: _packageStatusLabel ?? "Please enter a package name",
+        hint: "com.google.ads.mediation:facebook",
+        onChange: (packageName) => _packageId = packageName,
+      ),
+      SPButton(label: "Check package status", onTap: _onCheckPackageStatus),
+      SPButton(label: "Clear session", onTap: _onClearSessionTap),
+    ],
   );
 
   Future<void> _onCheckConsentStatus() async {
@@ -316,10 +328,10 @@ class _MainContentState extends State<_MainContent> {
   }
 
   Future<void> _onConsentBannerTap() async {
-    if (_selectedAppId == AppConfig.applicationId) {
+    if (_selectedAppId == AppConfig.primaryAppId) {
       final result = await _spMobileConsent.showConsentBanner();
       SPLogger.d(_kTag, "primary===> ${result.msg}");
-    } else if (_selectedAppId == AppConfig.secondaryApplicationId) {
+    } else if (_selectedAppId == AppConfig.secondaryAppId) {
       final result = await _spMobileConsent.showSecondaryBanner();
       SPLogger.d(_kTag, "secondary===> $result");
     }
@@ -356,6 +368,7 @@ class _MainContentState extends State<_MainContent> {
 
   Future<void> _onClearSessionTap() async {
     await _spMobileConsent.clearSession();
+    _selectedAppId = AppConfig.primaryAppId;
     widget.onSessionCleared();
   }
 }

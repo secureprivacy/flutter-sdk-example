@@ -1,6 +1,7 @@
 name: example_mobile_consent
 description: "Example Flutter application demonstrating the integration and usage of the Secure Privacy Consent Management SDK. This app showcases how to initialize the SDK, collect user consent, handle consent events, and sync preferences across Android and iOS platforms for compliance with global privacy regulations."
 publish_to: 'none'
+homepage: https://docs.secureprivacy.ai
 
 version: 1.0.0+1
 
@@ -11,8 +12,7 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  secure_privacy_mobile_consent:
-    path: ../../../sdk/hybrid/flutter
+  secure_privacy_mobile_consent: ^0.2.2
 
 dev_dependencies:
   flutter_test:

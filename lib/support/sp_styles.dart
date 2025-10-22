@@ -1,5 +1,5 @@
-import 'package:flutter/cupertino.dart';
 import 'package:example_mobile_consent/support/sp_app_colors.dart';
+import 'package:flutter/cupertino.dart';
 
 class SPCupertinoStyles {
   const SPCupertinoStyles._();

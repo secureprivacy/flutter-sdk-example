@@ -1,6 +1,6 @@
-import 'package:flutter/cupertino.dart';
 import 'package:example_mobile_consent/main_screen.dart';
 import 'package:example_mobile_consent/support/sp_styles.dart';
+import 'package:flutter/cupertino.dart';
 
 void main() {
   runApp(const MyApp());
